@@ -1,19 +1,27 @@
 package com.simransingh.quickcart.data
 
+import com.simransingh.quickcart.data.local.CartDao
 import com.simransingh.quickcart.data.local.CartItem
 import com.simransingh.quickcart.data.remote.ApiService
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import com.simransingh.quickcart.data.remote.ProductDto
+import kotlinx.coroutines.flow.Flow
 
-class CartRepository(private val apiService: ApiService?) {
-    private val _cachedItems = MutableStateFlow<List<CartItem>>(emptyList())
-    val cachedItems: StateFlow<List<CartItem>> = _cachedItems
+class CartRepository(
+    private val cartDao: CartDao,
+    private val apiService: ApiService
+) {
+    val cartItems: Flow<List<CartItem>> = cartDao.getAllCartItems()
 
-    suspend fun fetchRemoteCatalog() {
-        try {
-            // Handles network data flow mapping to local state
+    suspend fun fetchProducts(): Result<List<ProductDto>> {
+        return try {
+            val response = apiService.getInstantProducts()
+            Result.success(response)
         } catch (e: Exception) {
-            // Fallback handling for offline-first architecture
+            Result.failure(e)
         }
+    }
+
+    suspend fun addToCart(item: CartItem) {
+        cartDao.insertItem(item)
     }
 }
